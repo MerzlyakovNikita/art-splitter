@@ -4,7 +4,7 @@ import styles from "./Canvas.module.css";
 
 type Props = {
   image: HTMLImageElement | null;
-  rects: Rect[];
+  rects?: Rect[];
   mode?: "grid" | "color";
 };
 

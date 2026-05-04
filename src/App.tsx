@@ -21,6 +21,8 @@ type ProcessedGallery = {
   name: string;
   depth: number;
   images: string[];
+  originalPath: string;
+  originalImages: string[];
   createdAt: number;
 };
 
@@ -38,6 +40,13 @@ function App() {
   const [processedGalleries, setProcessedGalleries] = useState<
     ProcessedGallery[]
   >([]);
+  const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(
+    null,
+  );
+  const [isProcessedView, setIsProcessedView] = useState(false);
+
+  const [displayDepth, setDisplayDepth] = useState(0);
+  const [displayBlocks, setDisplayBlocks] = useState(0);
 
   useEffect(() => {
     getAllGalleries().then((data) => {
@@ -49,6 +58,7 @@ function App() {
 
   const handleImageLoad = (img: HTMLImageElement) => {
     setImage(img);
+    setOriginalImage(null);
 
     setRects([
       {
@@ -60,7 +70,10 @@ function App() {
     ]);
 
     setDepth(0);
+    setDisplayDepth(0);
+    setDisplayBlocks(1);
     setMode("color");
+    setIsProcessedView(false);
   };
 
   const handleSplit = () => {
@@ -68,7 +81,10 @@ function App() {
     if (depth >= MAX_DEPTH) return;
 
     setRects((prev) => prev.flatMap(splitInto4));
+
     setDepth((d) => d + 1);
+    setDisplayDepth((d) => d + 1);
+    setDisplayBlocks((b) => b * 4);
   };
 
   const handleReset = () => {
@@ -84,6 +100,8 @@ function App() {
     ]);
 
     setDepth(0);
+    setDisplayDepth(0);
+    setDisplayBlocks(1);
   };
 
   const processGallery = async () => {
@@ -115,6 +133,8 @@ function App() {
       name: selectedGallery.name,
       depth,
       images: results,
+      originalPath: selectedGallery.path,
+      originalImages: selectedGallery.images,
       createdAt: Date.now(),
     };
 
@@ -126,6 +146,34 @@ function App() {
     });
 
     setIsProcessing(false);
+  };
+
+  const handleLoadProcessed = (
+    processedSrc: string,
+    originalSrc: string,
+    depthValue: number,
+  ) => {
+    const processedImg = new Image();
+    const originalImg = new Image();
+
+    processedImg.src = processedSrc;
+    originalImg.src = originalSrc;
+
+    Promise.all([
+      new Promise((res) => (processedImg.onload = res)),
+      new Promise((res) => (originalImg.onload = res)),
+    ]).then(() => {
+      setImage(processedImg);
+      setOriginalImage(originalImg);
+
+      setRects([]);
+      setDepth(depthValue);
+
+      setDisplayDepth(depthValue);
+      setDisplayBlocks(Math.pow(4, depthValue)); // 🔥
+
+      setIsProcessedView(true);
+    });
   };
 
   function loadImage(src: string): Promise<HTMLImageElement> {
@@ -226,6 +274,7 @@ function App() {
           onLoad={handleImageLoad}
           onSelectGallery={setSelectedGallery}
           processedGalleries={processedGalleries}
+          onLoadProcessed={handleLoadProcessed}
         />
       }
       content={
@@ -234,9 +283,9 @@ function App() {
 
           {image && (
             <div>
-              <p>Глубина: {depth}</p>
+              <p>Глубина: {displayDepth}</p>
               <p>
-                Блоков: 4^{depth} = {rects.length}
+                Блоков: 4^{displayDepth} = {displayBlocks}
               </p>
             </div>
           )}
@@ -249,17 +298,22 @@ function App() {
             isProcessing={isProcessing}
             progress={progress}
             disabled={!hasImage}
+            isProcessedView={isProcessedView}
           />
 
           <div style={{ display: "flex", gap: 20 }}>
             <div>
               <h3>Исходное изображение</h3>
-              <Canvas image={image} rects={rects} />
+              <Canvas image={isProcessedView ? originalImage : image} />
             </div>
 
             <div>
-              <h3>Результат (разбиение)</h3>
-              <Canvas image={image} rects={rects} mode={mode} />
+              <h3>{isProcessedView ? "Обработанная картина" : "Результат"}</h3>
+              <Canvas
+                image={image}
+                rects={isProcessedView ? undefined : rects}
+                mode={isProcessedView ? undefined : mode}
+              />
             </div>
           </div>
         </>

@@ -1,0 +1,196 @@
+{
+  "london": {
+    "name": "Лондонская галерея",
+    "path": "/images/london/",
+    "items": [
+      {
+        "file": "l1.jpg",
+        "author": "Vincent van Gogh",
+        "title": "Sunflowers",
+        "year": "1888"
+      },
+      {
+        "file": "l2.jpg",
+        "author": "J. M. W. Turner",
+        "title": "The Fighting Temeraire",
+        "year": "1839"
+      },
+      {
+        "file": "l3.jpg",
+        "author": "Jan van Eyck",
+        "title": "The Arnolfini Portrait",
+        "year": "1434"
+      },
+      {
+        "file": "l4.jpg",
+        "author": "Leonardo da Vinci",
+        "title": "The Virgin of the Rocks",
+        "year": "1483–1486"
+      },
+      {
+        "file": "l5.jpg",
+        "author": "Claude Monet",
+        "title": "The Water-Lily Pond",
+        "year": "1899"
+      },
+      {
+        "file": "l6.jpg",
+        "author": "Georges Seurat",
+        "title": "Bathers at Asnières",
+        "year": "1884"
+      },
+      {
+        "file": "l7.jpg",
+        "author": "Édouard Manet",
+        "title": "The Execution of Maximilian",
+        "year": "1867"
+      },
+      {
+        "file": "l8.jpg",
+        "author": "Rembrandt",
+        "title": "Self Portrait at 34",
+        "year": "1640"
+      },
+      {
+        "file": "l9.jpg",
+        "author": "Caravaggio",
+        "title": "Supper at Emmaus",
+        "year": "1601"
+      },
+      {
+        "file": "l10.jpg",
+        "author": "Jean-Etienne Liotard",
+        "title": "The Lavergne Family Breakfast",
+        "year": "1754"
+      },
+      {
+        "file": "l11.jpg",
+        "author": "Titian",
+        "title": "Bacchus and Ariadne",
+        "year": "1523"
+      },
+      {
+        "file": "l12.jpg",
+        "author": "Hans Holbein",
+        "title": "The Ambassadors",
+        "year": "1533"
+      },
+      {
+        "file": "l13.jpg",
+        "author": "El Greco",
+        "title": "Christ driving the Traders from the Temple",
+        "year": "1600"
+      },
+      {
+        "file": "l14.jpg",
+        "author": "Canaletto",
+        "title": "The Stonemason’s Yard",
+        "year": "1725"
+      },
+      {
+        "file": "l15.jpg",
+        "author": "Peter Paul Rubens",
+        "title": "Saint Bavo is received by Saints Amand and Floribert",
+        "year": "1611"
+      }
+    ]
+  },
+
+  "russian": {
+    "name": "Русский музей",
+    "path": "/images/russian/",
+    "items": [
+      {
+        "file": "r1.jpg",
+        "author": "Иван Айвазовский",
+        "title": "Девятый вал",
+        "year": "1850"
+      },
+      {
+        "file": "r2.jpg",
+        "author": "Карл Брюллов",
+        "title": "Последний день Помпеи",
+        "year": "1833"
+      },
+      {
+        "file": "r3.jpg",
+        "author": "Архип Куинджи",
+        "title": "Лунная ночь на Днепре",
+        "year": "1880"
+      },
+      {
+        "file": "r4.jpg",
+        "author": "Михаил Врубель",
+        "title": "Демон сидящий",
+        "year": "1890"
+      },
+      {
+        "file": "r5.jpg",
+        "author": "Валентин Серов",
+        "title": "Девочка с персиками",
+        "year": "1887"
+      },
+      {
+        "file": "r6.jpg",
+        "author": "Борис Кустодиев",
+        "title": "Купчиха за чаем",
+        "year": "1918"
+      },
+
+      {
+        "file": "r7.jpg",
+        "author": "Фёдор Бруни",
+        "title": "Медный змий",
+        "year": "1841"
+      },
+      {
+        "file": "r8.jpg",
+        "author": "Фёдор Бруни",
+        "title": "Смерть Камиллы, сестры Горация",
+        "year": "1824"
+      },
+      {
+        "file": "r9.jpg",
+        "author": "Григорий Сорока",
+        "title": "Рыбаки",
+        "year": "1840-е"
+      },
+      {
+        "file": "r10.jpg",
+        "author": "Александр Иванов",
+        "title": "Явление Христа Марии Магдалине после воскресения",
+        "year": "1835"
+      },
+      {
+        "file": "r11.jpg",
+        "author": "Илья Репин",
+        "title": "Бурлаки на Волге",
+        "year": "1873"
+      },
+      {
+        "file": "r12.jpg",
+        "author": "Василий Суриков",
+        "title": "Взятие снежного городка",
+        "year": "1891"
+      },
+      {
+        "file": "r13.jpg",
+        "author": "Виктор Васнецов",
+        "title": "Витязь на распутье",
+        "year": "1882"
+      },
+      {
+        "file": "r14.jpg",
+        "author": "Иван Шишкин",
+        "title": "Корабельная роща",
+        "year": "1898"
+      },
+      {
+        "file": "r15.jpg",
+        "author": "Илья Репин",
+        "title": "Запорожцы",
+        "year": "1891"
+      }
+    ]
+  }
+}
