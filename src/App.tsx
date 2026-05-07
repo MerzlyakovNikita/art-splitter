@@ -3,28 +3,16 @@ import Layout from "./components/Layout/Layout";
 import Canvas from "./components/Canvas/Canvas";
 import Controls from "./components/Controls/Controls";
 import ImageLoader from "./components/ImageLoader/ImageLoader";
-import type { Rect } from "./core/types";
+import type {
+  Rect,
+  Gallery,
+  ProcessedGallery,
+  ProcessedImage,
+} from "./core/types";
 import { splitInto4 } from "./core/splitInto4";
 import { saveGallery, getAllGalleries } from "./core/storage/db";
 
 const MAX_DEPTH = 10;
-
-type Gallery = {
-  id: string;
-  name: string;
-  images: string[];
-  path: string;
-};
-
-type ProcessedGallery = {
-  id: string;
-  name: string;
-  depth: number;
-  images: string[];
-  originalPath: string;
-  originalImages: string[];
-  createdAt: number;
-};
 
 function App() {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -72,45 +60,21 @@ function App() {
     setDepth(0);
     setDisplayDepth(0);
     setDisplayBlocks(1);
-    setMode("color");
+    setMode("grid");
     setIsProcessedView(false);
   };
 
-  const handleSplit = () => {
-    if (!image) return;
-    if (depth >= MAX_DEPTH) return;
-
-    setRects((prev) => prev.flatMap(splitInto4));
-
-    setDepth((d) => d + 1);
-    setDisplayDepth((d) => d + 1);
-    setDisplayBlocks((b) => b * 4);
-  };
-
   const handleReset = () => {
-    if (!image) return;
-
-    setRects([
-      {
-        x: 0,
-        y: 0,
-        width: image.width,
-        height: image.height,
-      },
-    ]);
-
-    setDepth(0);
-    setDisplayDepth(0);
-    setDisplayBlocks(1);
+    applyDepth(0);
   };
 
   const processGallery = async () => {
-    if (!selectedGallery || depth === 0) return;
+    if (!selectedGallery) return;
 
     setIsProcessing(true);
     setProgress(0);
 
-    const results: string[] = [];
+    const results: ProcessedImage[] = [];
     const total = selectedGallery.images.length;
 
     for (let i = 0; i < total; i++) {
@@ -123,7 +87,25 @@ function App() {
 
       const result = renderToImage(img, rects);
 
-      results.push(result);
+      const tempCanvas = document.createElement("canvas");
+      const tempCtx = tempCanvas.getContext("2d");
+
+      if (!tempCtx) continue;
+
+      tempCanvas.width = img.width;
+      tempCanvas.height = img.height;
+
+      tempCtx.drawImage(img, 0, 0);
+
+      const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+
+      const metric = calculateMetric(imageData.data, img.width, rects);
+
+      results.push({
+        processedSrc: result,
+        originalSrc: src,
+        metric,
+      });
 
       setProgress((i + 1) / total);
     }
@@ -133,8 +115,6 @@ function App() {
       name: selectedGallery.name,
       depth,
       images: results,
-      originalPath: selectedGallery.path,
-      originalImages: selectedGallery.images,
       createdAt: Date.now(),
     };
 
@@ -170,10 +150,35 @@ function App() {
       setDepth(depthValue);
 
       setDisplayDepth(depthValue);
-      setDisplayBlocks(Math.pow(4, depthValue)); // 🔥
+      setDisplayBlocks(Math.pow(4, depthValue));
 
       setIsProcessedView(true);
     });
+  };
+
+  const applyDepth = (newDepth: number) => {
+    if (!image) return;
+
+    const safeDepth = Math.max(0, Math.min(MAX_DEPTH, newDepth));
+
+    let nextRects: Rect[] = [
+      {
+        x: 0,
+        y: 0,
+        width: image.width,
+        height: image.height,
+      },
+    ];
+
+    for (let i = 0; i < safeDepth; i++) {
+      nextRects = nextRects.flatMap(splitInto4);
+    }
+
+    setRects(nextRects);
+
+    setDepth(safeDepth);
+    setDisplayDepth(safeDepth);
+    setDisplayBlocks(Math.pow(4, safeDepth));
   };
 
   function loadImage(src: string): Promise<HTMLImageElement> {
@@ -267,6 +272,84 @@ function App() {
     return canvas.toDataURL("image/png");
   }
 
+  function calculateLuminance(r: number, g: number, b: number) {
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+
+  function calculateMetric(
+    data: Uint8ClampedArray,
+    imageWidth: number,
+    rects: Rect[],
+  ) {
+    const colors = rects.map((r) => getBlockAverageColor(data, imageWidth, r));
+
+    let avgR = 0;
+    let avgG = 0;
+    let avgB = 0;
+
+    colors.forEach((c) => {
+      avgR += c.r;
+      avgG += c.g;
+      avgB += c.b;
+    });
+
+    avgR /= colors.length;
+    avgG /= colors.length;
+    avgB /= colors.length;
+
+    let variance = 0;
+
+    colors.forEach((c) => {
+      const dr = c.r - avgR;
+      const dg = c.g - avgG;
+      const db = c.b - avgB;
+
+      variance += Math.sqrt(dr * dr + dg * dg + db * db);
+    });
+
+    const varianceMetric = variance / colors.length;
+
+    const luminance = calculateLuminance(avgR, avgG, avgB);
+
+    return luminance + varianceMetric;
+  }
+
+  function getBlockAverageColor(
+    data: Uint8ClampedArray,
+    imageWidth: number,
+    rect: Rect,
+  ) {
+    const startX = Math.floor(rect.x);
+    const startY = Math.floor(rect.y);
+
+    const endX = Math.ceil(rect.x + rect.width);
+    const endY = Math.ceil(rect.y + rect.height);
+
+    let r = 0;
+    let g = 0;
+    let b = 0;
+
+    let count = 0;
+
+    for (let y = startY; y < endY; y++) {
+      for (let x = startX; x < endX; x++) {
+        const i = (y * imageWidth + x) * 4;
+
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+
+        count++;
+      }
+    }
+
+    return {
+      r: r / count,
+      g: g / count,
+      b: b / count,
+    };
+  }
+
   return (
     <Layout
       sidebar={
@@ -283,7 +366,29 @@ function App() {
 
           {image && (
             <div>
-              <p>Глубина: {displayDepth}</p>
+              <div style={{ marginBottom: 12 }}>
+                <label>
+                  Глубина разбиения:
+                  <input
+                    type="number"
+                    min={0}
+                    max={MAX_DEPTH}
+                    value={displayDepth}
+                    disabled={!image || isProcessedView}
+                    onChange={(e) => applyDepth(Number(e.target.value))}
+                    style={{
+                      marginLeft: 10,
+                      width: 70,
+                      padding: 4,
+                    }}
+                  />
+                </label>
+
+                <div style={{ marginTop: 12, opacity: 0.7, fontSize: 14 }}>
+                  Максимальная глубина: {MAX_DEPTH}
+                </div>
+              </div>
+
               <p>
                 Блоков: 4^{displayDepth} = {displayBlocks}
               </p>
@@ -291,7 +396,6 @@ function App() {
           )}
 
           <Controls
-            onSplit={handleSplit}
             onReset={handleReset}
             onChangeMode={setMode}
             onProcessGallery={processGallery}

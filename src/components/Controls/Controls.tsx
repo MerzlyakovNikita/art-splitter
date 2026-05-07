@@ -1,7 +1,6 @@
 import Button from "../UI/Button/Button";
 
 type Props = {
-  onSplit: () => void;
   onReset: () => void;
   onChangeMode: (mode: "grid" | "color") => void;
   disabled?: boolean;
@@ -12,7 +11,6 @@ type Props = {
 };
 
 export default function Controls({
-  onSplit,
   onReset,
   onChangeMode,
   disabled,
@@ -23,9 +21,6 @@ export default function Controls({
 }: Props) {
   return (
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-      <Button onClick={onSplit} disabled={disabled || isProcessedView}>
-        Разбить изображение
-      </Button>
       <Button onClick={onReset} disabled={disabled || isProcessedView}>
         Сброс
       </Button>
@@ -33,8 +28,6 @@ export default function Controls({
       <Button onClick={() => onChangeMode("color")}>Средний цвет</Button>
       <Button
         onClick={() => {
-          console.log("CLICK");
-          console.log("TYPE:", typeof onProcessGallery);
           onProcessGallery?.();
         }}
       >
