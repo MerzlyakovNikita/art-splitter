@@ -24,12 +24,17 @@ export default function Controls({
       <Button onClick={onReset} disabled={disabled || isProcessedView}>
         Сброс
       </Button>
-      <Button onClick={() => onChangeMode("grid")}>Сетка</Button>
-      <Button onClick={() => onChangeMode("color")}>Средний цвет</Button>
+      <Button onClick={() => onChangeMode("grid")} disabled={isProcessedView}>
+        Сетка
+      </Button>
+      <Button onClick={() => onChangeMode("color")} disabled={isProcessedView}>
+        Средний цвет
+      </Button>
       <Button
         onClick={() => {
           onProcessGallery?.();
         }}
+        disabled={isProcessedView}
       >
         Применить ко всей галерее
       </Button>

@@ -3,6 +3,7 @@ import Layout from "./components/Layout/Layout";
 import Canvas from "./components/Canvas/Canvas";
 import Controls from "./components/Controls/Controls";
 import ImageLoader from "./components/ImageLoader/ImageLoader";
+import HelpModal from "./components/HelpModal/HelpModal";
 import type {
   Rect,
   Gallery,
@@ -11,6 +12,8 @@ import type {
 } from "./core/types";
 import { splitInto4 } from "./core/splitInto4";
 import { saveGallery, getAllGalleries } from "./core/storage/db";
+import Button from "./components/UI/Button/Button";
+import styles from "./App.module.css";
 
 const MAX_DEPTH = 10;
 
@@ -35,6 +38,8 @@ function App() {
 
   const [displayDepth, setDisplayDepth] = useState(0);
   const [displayBlocks, setDisplayBlocks] = useState(0);
+
+  const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
     getAllGalleries().then((data) => {
@@ -151,6 +156,8 @@ function App() {
 
       setDisplayDepth(depthValue);
       setDisplayBlocks(Math.pow(4, depthValue));
+
+      setSelectedGallery(null);
 
       setIsProcessedView(true);
     });
@@ -362,29 +369,29 @@ function App() {
       }
       content={
         <>
-          <h1>Разбиение изображений</h1>
+          <div className={styles.header}>
+            <h1>Разбиение изображений</h1>
+
+            <Button onClick={() => setHelpOpen(true)}>Справка</Button>
+          </div>
 
           {image && (
-            <div>
-              <div style={{ marginBottom: 12 }}>
+            <div className={styles.infoPanel}>
+              <div className={styles.depthBlock}>
                 <label>
                   Глубина разбиения:
                   <input
+                    className={styles.depthInput}
                     type="number"
                     min={0}
                     max={MAX_DEPTH}
                     value={displayDepth}
                     disabled={!image || isProcessedView}
                     onChange={(e) => applyDepth(Number(e.target.value))}
-                    style={{
-                      marginLeft: 10,
-                      width: 70,
-                      padding: 4,
-                    }}
                   />
                 </label>
 
-                <div style={{ marginTop: 12, opacity: 0.7, fontSize: 14 }}>
+                <div className={styles.depthHint}>
                   Максимальная глубина: {MAX_DEPTH}
                 </div>
               </div>
@@ -405,13 +412,13 @@ function App() {
             isProcessedView={isProcessedView}
           />
 
-          <div style={{ display: "flex", gap: 20 }}>
-            <div>
+          <div className={styles.canvasRow}>
+            <div className={styles.canvasColumn}>
               <h3>Исходное изображение</h3>
               <Canvas image={isProcessedView ? originalImage : image} />
             </div>
 
-            <div>
+            <div className={styles.canvasColumn}>
               <h3>{isProcessedView ? "Обработанная картина" : "Результат"}</h3>
               <Canvas
                 image={image}
@@ -420,6 +427,7 @@ function App() {
               />
             </div>
           </div>
+          <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
         </>
       }
     />
