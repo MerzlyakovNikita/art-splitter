@@ -2,45 +2,76 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   margin-bottom: 24px;
 }
 
+.pageContent {
+  padding-bottom: 300px;
+}
+
+.workspace {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
 .infoPanel {
-  margin-bottom: 20px;
+  margin-top: 30px;
+  min-width: 260px;
+  max-width: 260px;
 }
 
 .depthBlock {
   margin-bottom: 12px;
 }
 
-.depthInput {
-  margin-left: 10px;
-
-  width: 70px;
-
-  padding: 4px 8px;
-
+.depthInput,
+.metricInput {
+  width: 80px;
+  margin-left: 8px;
+  padding: 4px 6px;
+  background: #0f172a;
+  border: 1px solid #334155;
   border-radius: 6px;
-  border: none;
-
-  background: #1e293b;
   color: white;
 }
 
-.depthHint {
-  margin-top: 12px;
-
-  opacity: 0.7;
-
+.depthHint,
+.metricFormula {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  opacity: 0.75;
   font-size: 14px;
+}
+
+.metricPanel {
+  margin-top: 18px;
+}
+
+.metricTitle {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.metricInputs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.metricExample {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #111827;
+  border: 1px solid #334155;
+  font-size: 14px;
+  color: #a78bfa;
 }
 
 .canvasRow {
   display: flex;
   gap: 20px;
-
-  margin-top: 20px;
 }
 
 .canvasColumn {

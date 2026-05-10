@@ -1,11 +1,14 @@
-button {
-  padding: 10px 16px;
-  background: #3b82f6;
-  border: none;
-  color: white;
-  cursor: pointer;
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
 }
 
-button:hover {
-  background: #2563eb;
+.controls button {
+  width: 100%;
+}
+
+.fullWidth {
+  grid-column: span 2;
 }

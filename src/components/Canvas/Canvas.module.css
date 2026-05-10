@@ -13,10 +13,3 @@ canvas {
   padding: 10px;
   min-height: 250px;
 }
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
-}

@@ -4,6 +4,7 @@ import Canvas from "./components/Canvas/Canvas";
 import Controls from "./components/Controls/Controls";
 import ImageLoader from "./components/ImageLoader/ImageLoader";
 import HelpModal from "./components/HelpModal/HelpModal";
+import ImageStrip from "./components/ImageStrip/ImageStrip";
 import type {
   Rect,
   Gallery,
@@ -12,6 +13,7 @@ import type {
 } from "./core/types";
 import { splitInto4 } from "./core/splitInto4";
 import { saveGallery, getAllGalleries } from "./core/storage/db";
+import galleriesData from "./data/galleriesData.json";
 import Button from "./components/UI/Button/Button";
 import styles from "./App.module.css";
 
@@ -31,6 +33,31 @@ function App() {
   const [processedGalleries, setProcessedGalleries] = useState<
     ProcessedGallery[]
   >([]);
+
+  const [stripImages, setStripImages] = useState<
+    {
+      src: string;
+      title?: string;
+      author?: string;
+      metric?: number;
+      isProcessed?: boolean;
+      originalSrc?: string;
+      depth?: number;
+      kL: number;
+      kV: number;
+    }[]
+  >([]);
+  const [stripTitle, setStripTitle] = useState("");
+  const [sortMode, setSortMode] = useState<"asc" | "desc">("asc");
+  const [isProcessedStrip, setIsProcessedStrip] = useState(false);
+
+  const [kL, setKL] = useState(1);
+  const [kV, setKV] = useState(1);
+
+  const [currentL, setCurrentL] = useState(0);
+  const [currentV, setCurrentV] = useState(0);
+  const [currentM, setCurrentM] = useState(0);
+
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(
     null,
   );
@@ -49,6 +76,58 @@ function App() {
 
   const hasImage = !!image;
 
+  const handleOpenGallery = (galleryId: "russian" | "london") => {
+    const gallery = galleriesData[galleryId as keyof typeof galleriesData];
+
+    if (!gallery) return;
+
+    setSelectedGallery({
+      id: galleryId,
+      name: gallery.name,
+      path: gallery.path,
+      images: gallery.items.map((i) => i.file),
+    });
+
+    setStripTitle(gallery.name);
+    setIsProcessedStrip(false);
+
+    setStripImages(
+      gallery.items.map((item) => ({
+        src: gallery.path + item.file,
+        title: item.title,
+        author: item.author,
+        kL: 0,
+        kV: 0,
+        isProcessed: false,
+      })),
+    );
+  };
+
+  const handleOpenProcessed = (galleryId: "russian" | "london") => {
+    const gallery = processedGalleries.find((g) => g.id === galleryId);
+
+    if (!gallery) return;
+
+    setStripTitle(`${gallery.name} (глубина = ${gallery.depth})`);
+    setIsProcessedStrip(true);
+
+    setStripImages(
+      gallery.images.map((img) => ({
+        src: img.processedSrc,
+        metric: img.metric,
+        luminance: img.luminance,
+        variance: img.variance,
+        title: img.title,
+        author: img.author,
+        isProcessed: true,
+        originalSrc: img.originalSrc,
+        depth: gallery.depth,
+        kL: gallery.kL,
+        kV: gallery.kV,
+      })),
+    );
+  };
+
   const handleImageLoad = (img: HTMLImageElement) => {
     setImage(img);
     setOriginalImage(null);
@@ -65,7 +144,36 @@ function App() {
     setDepth(0);
     setDisplayDepth(0);
     setDisplayBlocks(1);
-    setMode("grid");
+
+    const canvas = document.createElement("canvas");
+
+    const ctx = canvas.getContext("2d");
+
+    if (ctx) {
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      ctx.drawImage(img, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+
+      const metricData = calculateMetric(imageData.data, img.width, [
+        {
+          x: 0,
+          y: 0,
+          width: img.width,
+          height: img.height,
+        },
+      ]);
+
+      setCurrentL(metricData.luminance);
+
+      setCurrentV(0);
+
+      setCurrentM(kL * metricData.luminance);
+    }
+
+    setMode("color");
     setIsProcessedView(false);
   };
 
@@ -104,12 +212,22 @@ function App() {
 
       const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
 
-      const metric = calculateMetric(imageData.data, img.width, rects);
+      const metricData = calculateMetric(imageData.data, img.width, rects);
+
+      const galleryItem =
+        galleriesData[selectedGallery.id as keyof typeof galleriesData].items[
+          i
+        ];
 
       results.push({
         processedSrc: result,
         originalSrc: src,
-        metric,
+        metric: metricData.metric,
+        luminance: metricData.luminance,
+        variance: metricData.variance,
+        title: galleryItem.title,
+        author: galleryItem.author,
+        year: galleryItem.year,
       });
 
       setProgress((i + 1) / total);
@@ -119,6 +237,8 @@ function App() {
       id: selectedGallery.id,
       name: selectedGallery.name,
       depth,
+      kL,
+      kV,
       images: results,
       createdAt: Date.now(),
     };
@@ -137,6 +257,11 @@ function App() {
     processedSrc: string,
     originalSrc: string,
     depthValue: number,
+    savedKL: number,
+    savedKV: number,
+    luminance: number,
+    variance: number,
+    metric: number,
   ) => {
     const processedImg = new Image();
     const originalImg = new Image();
@@ -156,6 +281,13 @@ function App() {
 
       setDisplayDepth(depthValue);
       setDisplayBlocks(Math.pow(4, depthValue));
+
+      setKL(savedKL);
+      setKV(savedKV);
+
+      setCurrentL(luminance);
+      setCurrentV(variance);
+      setCurrentM(metric);
 
       setSelectedGallery(null);
 
@@ -186,6 +318,25 @@ function App() {
     setDepth(safeDepth);
     setDisplayDepth(safeDepth);
     setDisplayBlocks(Math.pow(4, safeDepth));
+
+    const canvas = document.createElement("canvas");
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx || !image) return;
+
+    canvas.width = image.width;
+    canvas.height = image.height;
+
+    ctx.drawImage(image, 0, 0);
+
+    const imageData = ctx.getImageData(0, 0, image.width, image.height);
+
+    const metricData = calculateMetric(imageData.data, image.width, nextRects);
+
+    setCurrentL(metricData.luminance);
+    setCurrentV(metricData.variance);
+    setCurrentM(metricData.metric);
   };
 
   function loadImage(src: string): Promise<HTMLImageElement> {
@@ -318,7 +469,11 @@ function App() {
 
     const luminance = calculateLuminance(avgR, avgG, avgB);
 
-    return luminance + varianceMetric;
+    return {
+      metric: kL * luminance + kV * varianceMetric,
+      luminance,
+      variance: varianceMetric,
+    };
   }
 
   function getBlockAverageColor(
@@ -361,74 +516,173 @@ function App() {
     <Layout
       sidebar={
         <ImageLoader
-          onLoad={handleImageLoad}
-          onSelectGallery={setSelectedGallery}
-          processedGalleries={processedGalleries}
-          onLoadProcessed={handleLoadProcessed}
+          onOpenGallery={handleOpenGallery}
+          onOpenProcessed={handleOpenProcessed}
         />
       }
       content={
-        <>
+        <div className={styles.pageContent}>
           <div className={styles.header}>
             <h1>Разбиение изображений</h1>
 
             <Button onClick={() => setHelpOpen(true)}>Справка</Button>
           </div>
 
-          {image && (
-            <div className={styles.infoPanel}>
-              <div className={styles.depthBlock}>
-                <label>
-                  Глубина разбиения:
-                  <input
-                    className={styles.depthInput}
-                    type="number"
-                    min={0}
-                    max={MAX_DEPTH}
-                    value={displayDepth}
-                    disabled={!image || isProcessedView}
-                    onChange={(e) => applyDepth(Number(e.target.value))}
-                  />
-                </label>
+          <div className={styles.workspace}>
+            {image && (
+              <div className={styles.infoPanel}>
+                <div className={styles.depthBlock}>
+                  <label>
+                    Глубина разбиения:
+                    <input
+                      className={styles.depthInput}
+                      type="number"
+                      min={0}
+                      max={MAX_DEPTH}
+                      value={displayDepth}
+                      disabled={!image || isProcessedView}
+                      onChange={(e) => applyDepth(Number(e.target.value))}
+                    />
+                  </label>
 
-                <div className={styles.depthHint}>
-                  Максимальная глубина: {MAX_DEPTH}
+                  <div className={styles.depthHint}>
+                    Максимальная глубина: {MAX_DEPTH}
+                  </div>
                 </div>
+
+                <p>
+                  Блоков: 4^{displayDepth}
+                  {" = "}
+                  {displayBlocks}
+                </p>
+
+                <div className={styles.metricPanel}>
+                  <div className={styles.metricTitle}>Коэффициенты метрики</div>
+
+                  <div className={styles.metricFormula}>
+                    M = kL × L + kV × V
+                  </div>
+
+                  <div className={styles.metricInputs}>
+                    <label>
+                      kL:
+                      <input
+                        disabled={isProcessedView}
+                        type="number"
+                        step="0.1"
+                        value={kL}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+
+                          setKL(value);
+
+                          setCurrentM(value * currentL + kV * currentV);
+                        }}
+                        className={styles.metricInput}
+                      />
+                    </label>
+
+                    <label>
+                      kV:
+                      <input
+                        disabled={isProcessedView}
+                        type="number"
+                        step="0.1"
+                        value={kV}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+
+                          setKV(value);
+
+                          setCurrentM(kL * currentL + value * currentV);
+                        }}
+                        className={styles.metricInput}
+                      />
+                    </label>
+                  </div>
+
+                  <div className={styles.metricExample}>
+                    M = {kL}
+                    {" × "}
+                    {currentL.toFixed(1)}
+                    {" + "}
+                    {kV}
+                    {" × "}
+                    {currentV.toFixed(1)}
+                    {" = "}
+                    {currentM.toFixed(1)}
+                  </div>
+                </div>
+
+                <Controls
+                  onReset={handleReset}
+                  onChangeMode={setMode}
+                  onProcessGallery={processGallery}
+                  isProcessing={isProcessing}
+                  progress={progress}
+                  disabled={!hasImage}
+                  isProcessedView={isProcessedView}
+                />
+              </div>
+            )}
+
+            <div className={styles.canvasRow}>
+              <div className={styles.canvasColumn}>
+                <h3>Исходное изображение</h3>
+
+                <Canvas image={isProcessedView ? originalImage : image} />
               </div>
 
-              <p>
-                Блоков: 4^{displayDepth} = {displayBlocks}
-              </p>
-            </div>
-          )}
+              <div className={styles.canvasColumn}>
+                <h3>
+                  {isProcessedView ? "Обработанная картина" : "Результат"}
+                </h3>
 
-          <Controls
-            onReset={handleReset}
-            onChangeMode={setMode}
-            onProcessGallery={processGallery}
-            isProcessing={isProcessing}
-            progress={progress}
-            disabled={!hasImage}
-            isProcessedView={isProcessedView}
-          />
-
-          <div className={styles.canvasRow}>
-            <div className={styles.canvasColumn}>
-              <h3>Исходное изображение</h3>
-              <Canvas image={isProcessedView ? originalImage : image} />
-            </div>
-
-            <div className={styles.canvasColumn}>
-              <h3>{isProcessedView ? "Обработанная картина" : "Результат"}</h3>
-              <Canvas
-                image={image}
-                rects={isProcessedView ? undefined : rects}
-                mode={isProcessedView ? undefined : mode}
-              />
+                <Canvas
+                  image={image}
+                  rects={isProcessedView ? undefined : rects}
+                  mode={isProcessedView ? undefined : mode}
+                />
+              </div>
             </div>
           </div>
+
           <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
-        </>
+
+          <ImageStrip
+            title={stripTitle}
+            images={stripImages}
+            sortMode={sortMode}
+            showSort={isProcessedStrip}
+            onChangeSort={setSortMode}
+            onSelect={(item) => {
+              if (
+                item.isProcessed &&
+                item.originalSrc &&
+                item.depth !== undefined
+              ) {
+                handleLoadProcessed(
+                  item.src,
+                  item.originalSrc,
+                  item.depth,
+                  item.kL,
+                  item.kV,
+                  item.luminance ?? 0,
+                  item.variance ?? 0,
+                  item.metric ?? 0,
+                );
+
+                return;
+              }
+
+              const img = new Image();
+
+              img.src = item.src;
+
+              img.onload = () => handleImageLoad(img);
+            }}
+          />
+        </div>
       }
     />
   );

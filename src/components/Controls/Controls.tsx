@@ -1,4 +1,5 @@
 import Button from "../UI/Button/Button";
+import styles from "./Controls.module.css";
 
 type Props = {
   onReset: () => void;
@@ -20,24 +21,28 @@ export default function Controls({
   isProcessedView,
 }: Props) {
   return (
-    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-      <Button onClick={onReset} disabled={disabled || isProcessedView}>
-        Сброс
-      </Button>
+    <div className={styles.controls}>
       <Button onClick={() => onChangeMode("grid")} disabled={isProcessedView}>
         Сетка
       </Button>
       <Button onClick={() => onChangeMode("color")} disabled={isProcessedView}>
         Средний цвет
       </Button>
-      <Button
-        onClick={() => {
-          onProcessGallery?.();
-        }}
-        disabled={isProcessedView}
-      >
-        Применить ко всей галерее
-      </Button>
+      <div className={styles.fullWidth}>
+        <Button
+          onClick={() => {
+            onProcessGallery?.();
+          }}
+          disabled={isProcessedView}
+        >
+          Применить ко всей галерее
+        </Button>
+      </div>
+      <div className={styles.fullWidth}>
+        <Button onClick={onReset} disabled={disabled || isProcessedView}>
+          Сброс
+        </Button>
+      </div>
       {isProcessing && <div>Обработка: {(progress * 100).toFixed(0)}%</div>}
     </div>
   );
