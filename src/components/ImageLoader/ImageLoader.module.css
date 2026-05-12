@@ -1,19 +1,27 @@
 .container {
+  height: 100%;
   display: flex;
   flex-direction: column;
-
-  gap: 32px;
 }
 
 .section {
   display: flex;
   flex-direction: column;
-
   gap: 12px;
 }
 
 .section h3 {
   margin-bottom: 6px;
-
   color: #cbd5e1;
+}
+
+.helpBlock {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }

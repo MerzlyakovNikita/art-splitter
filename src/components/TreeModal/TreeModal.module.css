@@ -1,0 +1,58 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+
+.modal {
+  width: 1200px;
+  max-height: 80vh;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 24px;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #1e293b;
+  color: white;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.tree {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.step {
+  padding: 14px;
+  border-radius: 10px;
+  background: #111c34;
+  border: 1px solid #22304d;
+}
+
+.classLine {
+  font-size: 18px;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+}
+
+.similarity {
+  color: #a78bfa;
+  font-size: 14px;
+}

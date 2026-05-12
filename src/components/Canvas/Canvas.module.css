@@ -1,6 +1,10 @@
 canvas {
   border: 1px solid #334155;
   background: black;
+  max-width: 620px;
+  max-height: 520px;
+  width: 100%;
+  height: auto;
 }
 
 .wrapper {

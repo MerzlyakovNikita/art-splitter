@@ -21,6 +21,7 @@ export type ProcessedImage = {
   title: string;
   author: string;
   year: string;
+  features: FeatureVector;
 };
 
 export type ProcessedGallery = {
@@ -30,5 +31,20 @@ export type ProcessedGallery = {
   kL: number;
   kV: number;
   images: ProcessedImage[];
+  tree: TreeStep[];
   createdAt: number;
+};
+
+export type FeatureVector = {
+  dark: number;
+  detailed: number;
+  warm: number;
+  greenDominant: number;
+  monochrome: number;
+};
+
+export type TreeStep = {
+  classItems: number[];
+  similarity: number;
+  addedIndex: number | null;
 };

@@ -2,6 +2,9 @@
   display: grid;
   grid-template-columns: 220px 1fr;
   height: 100vh;
+  min-width: 0;
+  overflow-x: hidden;
+  flex: 1;
 }
 
 .sidebar {
@@ -9,6 +12,10 @@
   padding: 16px;
   overflow-y: auto;
   background: #020617;
+  height: 100vh;
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
 }
 
 .content {

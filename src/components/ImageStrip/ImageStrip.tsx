@@ -1,5 +1,6 @@
 import styles from "./ImageStrip.module.css";
 import { useRef } from "react";
+import type { FeatureVector } from "../../core/types";
 
 type ImageItem = {
   src: string;
@@ -13,6 +14,7 @@ type ImageItem = {
   depth?: number;
   kL: number;
   kV: number;
+  features?: FeatureVector;
 };
 
 type Props = {
@@ -39,8 +41,6 @@ export default function ImageStrip({
   const handleWheel = (e: React.WheelEvent) => {
     if (!stripRef.current) return;
 
-    e.preventDefault();
-
     stripRef.current.scrollLeft += e.deltaY;
   };
 
@@ -54,7 +54,7 @@ export default function ImageStrip({
   return (
     <div className={styles.wrapper}>
       <div className={styles.header}>
-        <h2>{title}</h2>
+        <h3>{title}</h3>
 
         {showSort && (
           <div className={styles.controls}>

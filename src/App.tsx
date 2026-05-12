@@ -5,11 +5,14 @@ import Controls from "./components/Controls/Controls";
 import ImageLoader from "./components/ImageLoader/ImageLoader";
 import HelpModal from "./components/HelpModal/HelpModal";
 import ImageStrip from "./components/ImageStrip/ImageStrip";
+import TreeModal from "./components/TreeModal/TreeModal";
 import type {
   Rect,
   Gallery,
   ProcessedGallery,
   ProcessedImage,
+  FeatureVector,
+  TreeStep,
 } from "./core/types";
 import { splitInto4 } from "./core/splitInto4";
 import { saveGallery, getAllGalleries } from "./core/storage/db";
@@ -17,7 +20,7 @@ import galleriesData from "./data/galleriesData.json";
 import Button from "./components/UI/Button/Button";
 import styles from "./App.module.css";
 
-const MAX_DEPTH = 10;
+const MAX_DEPTH = 9;
 
 function App() {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -45,6 +48,7 @@ function App() {
       depth?: number;
       kL: number;
       kV: number;
+      features?: FeatureVector;
     }[]
   >([]);
   const [stripTitle, setStripTitle] = useState("");
@@ -67,6 +71,8 @@ function App() {
   const [displayBlocks, setDisplayBlocks] = useState(0);
 
   const [helpOpen, setHelpOpen] = useState(false);
+  const [treeOpen, setTreeOpen] = useState(false);
+  const [selectedTree, setSelectedTree] = useState<TreeStep[]>([]);
 
   useEffect(() => {
     getAllGalleries().then((data) => {
@@ -109,6 +115,7 @@ function App() {
     if (!gallery) return;
 
     setStripTitle(`${gallery.name} (глубина = ${gallery.depth})`);
+    setSelectedTree(gallery.tree);
     setIsProcessedStrip(true);
 
     setStripImages(
@@ -124,6 +131,7 @@ function App() {
         depth: gallery.depth,
         kL: gallery.kL,
         kV: gallery.kV,
+        features: img.features,
       })),
     );
   };
@@ -188,6 +196,7 @@ function App() {
     setProgress(0);
 
     const results: ProcessedImage[] = [];
+    let tree: TreeStep[] = [];
     const total = selectedGallery.images.length;
 
     for (let i = 0; i < total; i++) {
@@ -225,6 +234,7 @@ function App() {
         metric: metricData.metric,
         luminance: metricData.luminance,
         variance: metricData.variance,
+        features: metricData.features,
         title: galleryItem.title,
         author: galleryItem.author,
         year: galleryItem.year,
@@ -233,6 +243,8 @@ function App() {
       setProgress((i + 1) / total);
     }
 
+    tree = buildTree(results);
+
     const galleryData: ProcessedGallery = {
       id: selectedGallery.id,
       name: selectedGallery.name,
@@ -240,6 +252,7 @@ function App() {
       kL,
       kV,
       images: results,
+      tree,
       createdAt: Date.now(),
     };
 
@@ -434,6 +447,162 @@ function App() {
     return 0.299 * r + 0.587 * g + 0.114 * b;
   }
 
+  function extractFeatures(
+    avgR: number,
+    avgG: number,
+    avgB: number,
+    luminance: number,
+    variance: number,
+  ) {
+    const dark = luminance < 110 ? 1 : 0;
+
+    const detailed = variance > 70 ? 1 : 0;
+
+    const warm = avgR > avgB ? 1 : 0;
+
+    const greenDominant = avgG > avgR && avgG > avgB ? 1 : 0;
+
+    const monochrome =
+      Math.abs(avgR - avgG) < 15 &&
+      Math.abs(avgR - avgB) < 15 &&
+      Math.abs(avgG - avgB) < 15
+        ? 1
+        : 0;
+
+    return {
+      dark,
+      detailed,
+      warm,
+      greenDominant,
+      monochrome,
+    };
+  }
+
+  function featureVector(features: FeatureVector) {
+    return [
+      features.dark,
+      features.detailed,
+      features.warm,
+      features.greenDominant,
+      features.monochrome,
+    ];
+  }
+
+  function cosineSimilarity(a: number[], b: number[]) {
+    let dot = 0;
+    let normA = 0;
+    let normB = 0;
+
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+
+    if (normA === 0 || normB === 0) {
+      return 0;
+    }
+
+    return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  function multiCosineSimilarity(vectors: number[][]) {
+    if (vectors.length < 2) {
+      return 0;
+    }
+
+    const dimension = vectors[0].length;
+    let numerator = 0;
+
+    for (let i = 0; i < dimension; i++) {
+      let product = 1;
+      for (let j = 0; j < vectors.length; j++) {
+        product *= vectors[j][i];
+      }
+      numerator += product;
+    }
+
+    let denominatorProduct = 1;
+
+    for (let j = 0; j < vectors.length; j++) {
+      let normSquared = 0;
+      for (let i = 0; i < dimension; i++) {
+        normSquared += vectors[j][i] * vectors[j][i];
+      }
+      denominatorProduct *= normSquared;
+    }
+
+    const denominator = Math.sqrt(denominatorProduct);
+
+    if (denominator === 0) {
+      return 0;
+    }
+
+    return numerator / denominator;
+  }
+
+  function buildTree(results: ProcessedImage[]) {
+    let bestPair = [0, 1];
+    let bestSimilarity = -1;
+
+    for (let i = 0; i < results.length; i++) {
+      for (let j = i + 1; j < results.length; j++) {
+        const similarity = cosineSimilarity(
+          featureVector(results[i].features),
+          featureVector(results[j].features),
+        );
+
+        if (similarity > bestSimilarity) {
+          bestSimilarity = similarity;
+          bestPair = [i, j];
+        }
+      }
+    }
+
+    const currentClass = [bestPair[0], bestPair[1]];
+
+    const steps: TreeStep[] = [
+      {
+        classItems: [...currentClass],
+        similarity: bestSimilarity,
+        addedIndex: null,
+      },
+    ];
+
+    while (currentClass.length < results.length) {
+      let bestCandidate = -1;
+      let bestMultiCos = -1;
+
+      for (let i = 0; i < results.length; i++) {
+        if (currentClass.includes(i)) {
+          continue;
+        }
+
+        const vectors = currentClass.map((idx) =>
+          featureVector(results[idx].features),
+        );
+
+        vectors.push(featureVector(results[i].features));
+
+        const similarity = multiCosineSimilarity(vectors);
+
+        if (similarity > bestMultiCos) {
+          bestMultiCos = similarity;
+          bestCandidate = i;
+        }
+      }
+
+      currentClass.push(bestCandidate);
+      steps.push({
+        classItems: [...currentClass],
+        similarity: bestMultiCos,
+        addedIndex: bestCandidate,
+      });
+    }
+
+    return steps;
+  }
+
   function calculateMetric(
     data: Uint8ClampedArray,
     imageWidth: number,
@@ -469,10 +638,21 @@ function App() {
 
     const luminance = calculateLuminance(avgR, avgG, avgB);
 
+    const metric = kL * luminance + kV * varianceMetric;
+
+    const features = extractFeatures(
+      avgR,
+      avgG,
+      avgB,
+      luminance,
+      varianceMetric,
+    );
+
     return {
-      metric: kL * luminance + kV * varianceMetric,
+      metric,
       luminance,
       variance: varianceMetric,
+      features,
     };
   }
 
@@ -505,6 +685,14 @@ function App() {
       }
     }
 
+    if (count === 0) {
+      return {
+        r: 0,
+        g: 0,
+        b: 0,
+      };
+    }
+
     return {
       r: r / count,
       g: g / count,
@@ -518,16 +706,11 @@ function App() {
         <ImageLoader
           onOpenGallery={handleOpenGallery}
           onOpenProcessed={handleOpenProcessed}
+          onOpenHelp={() => setHelpOpen(true)}
         />
       }
       content={
         <div className={styles.pageContent}>
-          <div className={styles.header}>
-            <h1>Разбиение изображений</h1>
-
-            <Button onClick={() => setHelpOpen(true)}>Справка</Button>
-          </div>
-
           <div className={styles.workspace}>
             {image && (
               <div className={styles.infoPanel}>
@@ -613,16 +796,30 @@ function App() {
                     {currentM.toFixed(1)}
                   </div>
                 </div>
-
-                <Controls
-                  onReset={handleReset}
-                  onChangeMode={setMode}
-                  onProcessGallery={processGallery}
-                  isProcessing={isProcessing}
-                  progress={progress}
-                  disabled={!hasImage}
-                  isProcessedView={isProcessedView}
-                />
+                <div className={styles.controlsSection}>
+                  <Controls
+                    onReset={handleReset}
+                    onChangeMode={setMode}
+                    onProcessGallery={processGallery}
+                    isProcessing={isProcessing}
+                    progress={progress}
+                    disabled={!hasImage}
+                    isProcessedView={isProcessedView}
+                  />
+                  {isProcessedStrip && (
+                    <Button
+                      onClick={() => {
+                        if (selectedTree.length === 0) {
+                          alert("Для галереи нет дерева");
+                          return;
+                        }
+                        setTreeOpen(true);
+                      }}
+                    >
+                      Показать дерево
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -681,6 +878,12 @@ function App() {
 
               img.onload = () => handleImageLoad(img);
             }}
+          />
+          <TreeModal
+            open={treeOpen}
+            onClose={() => setTreeOpen(false)}
+            tree={selectedTree}
+            images={stripImages}
           />
         </div>
       }
