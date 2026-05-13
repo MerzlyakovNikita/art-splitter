@@ -74,6 +74,14 @@ function App() {
   const [treeOpen, setTreeOpen] = useState(false);
   const [selectedTree, setSelectedTree] = useState<TreeStep[]>([]);
 
+  const [orderedImages, setOrderedImages] = useState<
+    {
+      src: string;
+      title?: string;
+      features?: FeatureVector;
+    }[]
+  >([]);
+
   useEffect(() => {
     getAllGalleries().then((data) => {
       setProcessedGalleries(data as ProcessedGallery[]);
@@ -116,6 +124,13 @@ function App() {
 
     setStripTitle(`${gallery.name} (глубина = ${gallery.depth})`);
     setSelectedTree(gallery.tree);
+    setOrderedImages(
+      gallery.order.map((index) => ({
+        src: gallery.images[index].processedSrc,
+        title: gallery.images[index].title,
+        features: gallery.images[index].features,
+      })),
+    );
     setIsProcessedStrip(true);
 
     setStripImages(
@@ -243,7 +258,19 @@ function App() {
       setProgress((i + 1) / total);
     }
 
-    tree = buildTree(results);
+    const { steps, order } = buildTree(results);
+
+    tree = steps;
+
+    setOrderedImages(
+      order.map((index) => ({
+        src: results[index].processedSrc,
+
+        title: results[index].title,
+
+        features: results[index].features,
+      })),
+    );
 
     const galleryData: ProcessedGallery = {
       id: selectedGallery.id,
@@ -253,6 +280,7 @@ function App() {
       kV,
       images: results,
       tree,
+      order,
       createdAt: Date.now(),
     };
 
@@ -600,7 +628,10 @@ function App() {
       });
     }
 
-    return steps;
+    return {
+      steps,
+      order: currentClass,
+    };
   }
 
   function calculateMetric(
@@ -882,8 +913,12 @@ function App() {
           <TreeModal
             open={treeOpen}
             onClose={() => setTreeOpen(false)}
+            onOpenHelp={() => {
+              setTreeOpen(false);
+              setHelpOpen(true);
+            }}
             tree={selectedTree}
-            images={stripImages}
+            images={orderedImages}
           />
         </div>
       }

@@ -18,7 +18,7 @@ export default function TreeGraph({ tree, images }: Props) {
   const [hovered, setHovered] = useState<number | null>(null);
 
   const width = 1150;
-  const height = 650;
+  const height = 620;
 
   const bottomY = 560;
   const leftX = 90;

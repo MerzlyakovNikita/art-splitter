@@ -56,3 +56,21 @@
   color: #a78bfa;
   font-size: 14px;
 }
+
+.vectorHint {
+  margin-top: 8px;
+  margin-bottom: 12px;
+  color: #94a3b8;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.helpLink {
+  color: #60a5fa;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.helpLink:hover {
+  color: #93c5fd;
+}

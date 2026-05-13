@@ -5,15 +5,21 @@ import type { TreeStep } from "../../core/types";
 type Props = {
   open: boolean;
   onClose: () => void;
+  onOpenHelp: () => void;
   tree: TreeStep[];
-
   images: {
     src: string;
     title?: string;
   }[];
 };
 
-export default function TreeModal({ open, onClose, tree, images }: Props) {
+export default function TreeModal({
+  open,
+  onClose,
+  onOpenHelp,
+  tree,
+  images,
+}: Props) {
   if (!open) return null;
 
   return (
@@ -23,7 +29,16 @@ export default function TreeModal({ open, onClose, tree, images }: Props) {
           ×
         </button>
 
-        <h2>Дерево сходства</h2>
+        <h2>Дерево классов</h2>
+        <div className={styles.vectorHint}>
+          (Т Д Тп З М)
+          {" — "}
+          пространство признаков (
+          <span className={styles.helpLink} onClick={onOpenHelp}>
+            см. справку
+          </span>
+          )
+        </div>
 
         <TreeGraph tree={tree} images={images} />
       </div>

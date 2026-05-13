@@ -32,6 +32,7 @@ export type ProcessedGallery = {
   kV: number;
   images: ProcessedImage[];
   tree: TreeStep[];
+  order: number[];
   createdAt: number;
 };
 
