@@ -12,11 +12,18 @@ export default function Canvas({ image, rects, mode }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (!canvasRef.current || !image) return;
+    if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
+
     if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!image) {
+      return;
+    }
 
     const img = image;
 

@@ -38,6 +38,7 @@
 }
 
 .card {
+  position: relative;
   min-width: 160px;
   max-width: 160px;
   cursor: pointer;
@@ -107,4 +108,18 @@
 
 .sortButton:hover {
   background: #334155;
+}
+
+.deleteImageButton {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
 }

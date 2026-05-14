@@ -3,6 +3,7 @@ import { useRef } from "react";
 import type { FeatureVector } from "../../core/types";
 
 type ImageItem = {
+  id: string;
   src: string;
   title?: string;
   author?: string;
@@ -14,6 +15,9 @@ type ImageItem = {
   depth?: number;
   kL: number;
   kV: number;
+  kW: number;
+  kG: number;
+  kMColor: number;
   features?: FeatureVector;
 };
 
@@ -24,6 +28,9 @@ type Props = {
   sortMode?: "asc" | "desc";
   onChangeSort?: (mode: "asc" | "desc") => void;
   showSort?: boolean;
+  uploadButton?: React.ReactNode;
+  deleteMode?: boolean;
+  onDelete?: (id: string) => void;
 };
 
 export default function ImageStrip({
@@ -33,8 +40,16 @@ export default function ImageStrip({
   sortMode = "asc",
   onChangeSort,
   showSort = false,
+  uploadButton,
+  deleteMode,
+  onDelete,
 }: Props) {
-  const sorted = [...images];
+  const sorted = [...images].sort((a, b) => {
+    const ma = a.metric ?? 0;
+    const mb = b.metric ?? 0;
+
+    return sortMode === "asc" ? ma - mb : mb - ma;
+  });
 
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -44,18 +59,11 @@ export default function ImageStrip({
     stripRef.current.scrollLeft += e.deltaY;
   };
 
-  sorted.sort((a, b) => {
-    const ma = a.metric ?? 0;
-    const mb = b.metric ?? 0;
-
-    return sortMode === "asc" ? ma - mb : mb - ma;
-  });
-
   return (
     <div className={styles.wrapper}>
       <div className={styles.header}>
         <h3>{title}</h3>
-
+        {uploadButton}
         {showSort && (
           <div className={styles.controls}>
             <button
@@ -71,10 +79,30 @@ export default function ImageStrip({
       </div>
 
       <div ref={stripRef} className={styles.strip} onWheel={handleWheel}>
-        {sorted.map((img, i) => (
-          <div key={i} className={styles.card} onClick={() => onSelect(img)}>
+        {sorted.map((img) => (
+          <div
+            key={img.id}
+            className={styles.card}
+            onClick={() => onSelect(img)}
+          >
             {img.metric !== undefined && (
               <div className={styles.metric}>M = {img.metric.toFixed(1)}</div>
+            )}
+            {deleteMode && onDelete && (
+              <button
+                type="button"
+                className={styles.deleteImageButton}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onDelete(img.id);
+                }}
+              >
+                ×
+              </button>
             )}
             <img src={img.src} className={styles.image} />
 

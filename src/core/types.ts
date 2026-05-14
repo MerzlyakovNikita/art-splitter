@@ -13,6 +13,7 @@ export type Gallery = {
 };
 
 export type ProcessedImage = {
+  id: string;
   processedSrc: string;
   originalSrc: string;
   metric: number;
@@ -30,6 +31,9 @@ export type ProcessedGallery = {
   depth: number;
   kL: number;
   kV: number;
+  kW: number;
+  kG: number;
+  kMColor: number;
   images: ProcessedImage[];
   tree: TreeStep[];
   order: number[];
@@ -48,4 +52,16 @@ export type TreeStep = {
   classItems: number[];
   similarity: number;
   addedIndex: number | null;
+};
+
+export type UserGalleryImage = {
+  id: string;
+  src: string;
+  title: string;
+};
+
+export type UserGallery = {
+  id: string;
+  name: string;
+  images: UserGalleryImage[];
 };

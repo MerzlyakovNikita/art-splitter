@@ -10,7 +10,6 @@
 }
 
 .infoPanel {
-  margin-top: 24px;
   min-width: 260px;
   max-width: 260px;
 }
@@ -21,7 +20,7 @@
 
 .depthInput,
 .metricInput {
-  width: 80px;
+  width: 60px;
   margin-left: 8px;
   padding: 4px 6px;
   background: #0f172a;
@@ -36,10 +35,11 @@
   margin-bottom: 8px;
   opacity: 0.75;
   font-size: 14px;
+  word-break: break-word;
 }
 
 .metricPanel {
-  margin-top: 18px;
+  margin-top: 8px;
 }
 
 .metricTitle {
@@ -48,9 +48,9 @@
 }
 
 .metricInputs {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 14px;
 }
 
 .metricExample {
@@ -79,5 +79,46 @@
 .controlsSection {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+}
+
+.userGalleryToolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.uploadButton {
+  width: fit-content;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.uploadButton:hover {
+  background: #1e293b;
+}
+
+.uploadInfo {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.galleryButtons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.deleteButton {
+  background: #7f1d1d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
 }
